@@ -22,14 +22,7 @@ const productos = [
   { id: 18, nombre: 'Aceite de motor 20W50 mineral', marca: 'ACCTIRES', tipo: 'Accesorio', precio: 18, stock: 30, rin: '-', vehiculo: 'General', referencia: 'ACE2050' }
 ];
 
-const imagenes = {
-  PIRELLI: 'https://images.unsplash.com/photo-1600705722908-bab61744b7fb?auto=format&fit=crop&w=900&q=80',
-  TRIANGLE: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=900&q=80',
-  BRIDGESTONE: 'https://images.unsplash.com/photo-1597007066704-67bf2068d5b8?auto=format&fit=crop&w=900&q=80',
-  FIRESTONE: 'https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9?auto=format&fit=crop&w=900&q=80',
-  GOODRIDE: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=900&q=80',
-  ACCTIRES: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=900&q=80'
-};
+const WHATSAPP_NUMBER = '5804143254573';
 
 function App() {
   const [busqueda, setBusqueda] = useState('');
@@ -37,6 +30,7 @@ function App() {
   const [vehiculo, setVehiculo] = useState('Todos');
   const [carrito, setCarrito] = useState([]);
   const [checkout, setCheckout] = useState(false);
+  const [admin, setAdmin] = useState(false);
 
   const productosFiltrados = useMemo(() => productos.filter((p) => {
     const texto = `${p.nombre} ${p.marca} ${p.vehiculo} ${p.referencia}`.toLowerCase();
@@ -46,6 +40,9 @@ function App() {
   const subtotal = carrito.reduce((suma, item) => suma + item.precio * item.cantidad, 0);
   const iva = subtotal * 0.16;
   const total = subtotal + iva;
+  const stockTotal = productos.reduce((suma, p) => suma + p.stock, 0);
+  const valorInventario = productos.reduce((suma, p) => suma + p.stock * p.precio, 0);
+  const sinStock = productos.filter((p) => p.stock === 0).length;
 
   const agregar = (producto) => {
     const existe = carrito.find((item) => item.id === producto.id);
@@ -56,16 +53,22 @@ function App() {
   const cambiarCantidad = (id, delta) => setCarrito(carrito.map((item) => item.id === id ? { ...item, cantidad: Math.max(1, item.cantidad + delta) } : item));
   const eliminar = (id) => setCarrito(carrito.filter((item) => item.id !== id));
 
+  const enviarWhatsApp = () => {
+    const detalle = carrito.map((item) => `• ${item.cantidad} x ${item.nombre} (${item.referencia}) - $${(item.precio * item.cantidad).toFixed(2)}`).join('\n');
+    const mensaje = `Hola ACCTIRES, quiero solicitar esta compra:%0A%0A${encodeURIComponent(detalle)}%0A%0ASubtotal: $${subtotal.toFixed(2)}%0AIVA estimado: $${iva.toFixed(2)}%0ATotal estimado: $${total.toFixed(2)}%0A%0AMétodo de pago a coordinar.`;
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${mensaje}`, '_blank');
+  };
+
   return (
     <main className="page">
       <section className="hero">
         <div>
-          <p className="tag">Catálogo digital premium</p>
+          <p className="tag">Catálogo digital demo</p>
           <h1>ACCTIRES</h1>
-          <p className="subtitle">Cauchos, baterías y productos automotrices. Filtra por vehículo, rin, marca o referencia y arma una solicitud de compra.</p>
-          <div className="hero-actions"><button>Ver productos</button><button className="secondary">Contactar asesor</button></div>
+          <p className="subtitle">Cauchos, baterías y productos automotrices. Arma tu pedido y envíalo por WhatsApp.</p>
+          <div className="hero-actions"><button>Ver productos</button><button className="secondary" onClick={() => setAdmin(true)}>Panel admin</button></div>
         </div>
-        <div className="hero-card"><strong>{productos.length}</strong><span>productos disponibles</span><small>Catálogo demo conectado al inventario inicial</small></div>
+        <div className="hero-card"><strong>{productos.length}</strong><span>productos cargados</span><small>Base de datos simulada</small></div>
       </section>
 
       <section className="filters">
@@ -77,13 +80,12 @@ function App() {
       <section className="layout">
         <div className="grid">
           {productosFiltrados.map((producto) => (
-            <article className="card" key={producto.id}>
-              <img src={imagenes[producto.marca] || imagenes.ACCTIRES} alt={producto.nombre} />
+            <article className="card no-image" key={producto.id}>
               <div className="card-body">
                 <div className="line"><span className="brand">{producto.marca}</span><span className={producto.stock > 0 ? 'available' : 'sold'}>{producto.stock > 0 ? 'Disponible' : 'Consultar'}</span></div>
                 <h3>{producto.nombre}</h3>
                 <p className="meta">Rin {producto.rin} · {producto.vehiculo}</p>
-                <p className="ref">Ref: {producto.referencia}</p>
+                <p className="ref">Ref: {producto.referencia} · Stock: {producto.stock}</p>
                 <div className="bottom"><strong>${producto.precio.toFixed(2)}</strong><button onClick={() => agregar(producto)}>Agregar</button></div>
               </div>
             </article>
@@ -101,11 +103,13 @@ function App() {
             </div>
           ))}
           <div className="summary"><p>Subtotal <strong>${subtotal.toFixed(2)}</strong></p><p>IVA estimado 16% <strong>${iva.toFixed(2)}</strong></p><p className="grand">Total <strong>${total.toFixed(2)}</strong></p></div>
-          <button className="checkout" disabled={carrito.length === 0} onClick={() => setCheckout(true)}>Solicitar compra</button>
+          <button className="checkout" disabled={carrito.length === 0} onClick={() => setCheckout(true)}>Revisar compra</button>
         </aside>
       </section>
 
-      {checkout && <section className="modal"><div className="modal-card"><button className="close" onClick={() => setCheckout(false)}>×</button><h2>Resumen de compra</h2>{carrito.map((item) => <p key={item.id}>{item.cantidad} × {item.nombre} — ${(item.precio * item.cantidad).toFixed(2)}</p>)}<div className="summary"><p>Subtotal <strong>${subtotal.toFixed(2)}</strong></p><p>IVA estimado <strong>${iva.toFixed(2)}</strong></p><p className="grand">Total <strong>${total.toFixed(2)}</strong></p></div><h3>Métodos de pago disponibles próximamente</h3><div className="payments"><span>Pago móvil</span><span>Transferencia</span><span>Zelle</span><span>Efectivo</span></div><button className="checkout">Enviar solicitud</button><small>Demo: todavía no procesa pagos reales.</small></div></section>}
+      {checkout && <section className="modal"><div className="modal-card"><button className="close" onClick={() => setCheckout(false)}>×</button><h2>Resumen de compra</h2>{carrito.map((item) => <p key={item.id}>{item.cantidad} × {item.nombre} — ${(item.precio * item.cantidad).toFixed(2)}</p>)}<div className="summary"><p>Subtotal <strong>${subtotal.toFixed(2)}</strong></p><p>IVA estimado <strong>${iva.toFixed(2)}</strong></p><p className="grand">Total <strong>${total.toFixed(2)}</strong></p></div><h3>Métodos de pago</h3><div className="payments"><span>Pago móvil</span><span>Transferencia</span><span>Zelle</span><span>Efectivo</span></div><button className="checkout" onClick={enviarWhatsApp}>Enviar pedido por WhatsApp</button><small>Demo: el pago se coordina luego por WhatsApp.</small></div></section>}
+
+      {admin && <section className="modal"><div className="modal-card admin-panel"><button className="close" onClick={() => setAdmin(false)}>×</button><h2>Panel admin demo</h2><p className="empty">Datos simulados de inventario y ventas.</p><div className="stats"><div><strong>{productos.length}</strong><span>Productos</span></div><div><strong>{stockTotal}</strong><span>Unidades en stock</span></div><div><strong>${valorInventario.toFixed(2)}</strong><span>Valor inventario</span></div><div><strong>{sinStock}</strong><span>Sin stock</span></div></div><h3>Base de datos simulada</h3><div className="table"><div className="row head"><span>Ref</span><span>Producto</span><span>Stock</span><span>Precio</span></div>{productos.slice(0, 8).map((p) => <div className="row" key={p.id}><span>{p.referencia}</span><span>{p.nombre}</span><span>{p.stock}</span><span>${p.precio.toFixed(2)}</span></div>)}</div></div></section>}
     </main>
   );
 }
