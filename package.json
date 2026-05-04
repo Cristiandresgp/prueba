@@ -6,16 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test",
+    "lint": "echo \"Lint pendiente: instalar eslint en entorno\""
   },
   "dependencies": {
-    "@supabase/supabase-js": "latest",
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "lucide-react": "latest",
-    "recharts": "latest"
+    "@supabase/supabase-js": "2.105.3",
+    "@vitejs/plugin-react": "6.0.1",
+    "vite": "8.0.10",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "lucide-react": "1.14.0",
+    "recharts": "3.8.1"
   },
   "devDependencies": {}
 }
